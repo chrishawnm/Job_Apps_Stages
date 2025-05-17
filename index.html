@@ -44,7 +44,7 @@
 
   <script>
     const stageOrder = [
-      "No Reply", "Rejection Email", "Recruiter Screen", "Technical Screen",
+      "No Reply", "Rejection Email" ,"Recruiter Screen", "Technical Screen",
       "HM Screen", "Onsite Interview", "Final Round"
     ];
 
@@ -150,6 +150,9 @@
       const degreeCounts = d3.rollup(subset, v => v.length, d => d["Highest Degree"]);
       const visaCounts = d3.rollup(subset, v => v.length, d => d["Visa Sponsorship"]);
       const referralCounts = d3.rollup(subset, v => v.length, d => d["Referral"]);
+      const programCounts = d3.rollup(subset, v => v.length, d => d["Came Through Program Channel"]);
+      const inviteCounts = d3.rollup(subset, v => v.length, d => d["Invited to Interview by Recruiter or HM"]);
+      const coverLetterCounts = d3.rollup(subset, v => v.length, d => d["Submitted Cover Letter"]);
 
       const experienceBuckets = {
         "<2 Years": 0,
@@ -170,26 +173,29 @@
       breakdown.html(`<h4>${stage}</h4>`);
 
       const formatBreakdown = (label, mapOrObj) => {
-      breakdown.append("p").html(`<strong>${label}</strong>`);
+        breakdown.append("p").html(`<strong>${label}</strong>`);
+        const entries = mapOrObj instanceof Map
+          ? Array.from(mapOrObj.entries())
+          : Array.isArray(mapOrObj)
+          ? mapOrObj
+          : Object.entries(mapOrObj);
 
-      const entries = mapOrObj instanceof Map
-        ? Array.from(mapOrObj.entries())
-        : Array.isArray(mapOrObj)
-        ? mapOrObj
-        : Object.entries(mapOrObj);
-
-      breakdown.append("ul")
-        .selectAll("li")
-        .data(entries)
-        .join("li")
-        .text(([key, val]) => `${key}: ${(val / count * 100).toFixed(1)}%`);
+        breakdown.append("ul")
+          .selectAll("li")
+          .data(entries)
+          .join("li")
+          .text(([key, val]) => `${key}: ${(val / count * 100).toFixed(1)}%`);
       };
 
       formatBreakdown("Highest Degree", degreeCounts);
       formatBreakdown("Visa Sponsorship", visaCounts);
       formatBreakdown("Years of Experience", Object.entries(experienceBuckets));
       formatBreakdown("Referral", referralCounts);
+      formatBreakdown("Came Through Program Channel", programCounts);
+      formatBreakdown("Invited to Interview by Recruiter or HM", inviteCounts);
+      formatBreakdown("Submitted Cover Letter", coverLetterCounts);
     }
+
   </script>
 </body>
 </html>
