@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Process Dashboard</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: row; margin: 20px; }
+    #filters, #details { width: 25%; margin-right: 20px; }
+    #chart { width: 50%; }
+    select { width: 100%; padding: 5px; margin-bottom: 10px; }
+    .bar { fill: steelblue; cursor: pointer; }
+    .bar:hover { fill: darkorange; }
+    .highlighted { font-weight: bold; color: darkgreen; }
+  </style>
+</head>
+<body>
+  <div id="filters">
+    <h3>Filters</h3>
+    <select id="companyFilter"></select>
+    <select id="titleFilter"></select>
+    <select id="levelFilter"></select>
+    <p><strong>Total Applications:</strong> <span id="totalCount"></span></p>
+  </div>
+
+  <svg id="chart" height="400"></svg>
+
+  <div id="details">
+    <h3>Stage Breakdown</h3>
+    <div id="breakdown"></div>
+  </div>
+
+  <script>
+    const stageOrder = [
+      "No Reply", "Recruiter Screen", "Technical Screen",
+      "HM Screen", "Onsite Interview", "Final Round"
+    ];
+
+    let rawData, filteredData;
+
+    // Load sample CSV data
+    d3.csv("interview_data.csv").then(data => {
+      rawData = data;
+      populateFilters();
+      applyFilters();
+    });
+
+    function populateFilters() {
+      const companies = Array.from(new Set(rawData.map(d => d.Company)));
+      const titles = Array.from(new Set(rawData.map(d => d["Job Title"])));
+      const levels = Array.from(new Set(rawData.map(d => d["Job Level"])));
+
+      populateSelect("companyFilter", companies);
+      populateSelect("titleFilter", titles);
+      populateSelect("levelFilter", levels);
+
+      d3.selectAll("select").on("change", applyFilters);
+    }
+
+    function populateSelect(id, options) {
+      const select = d3.select(`#${id}`);
+      select.append("option").attr("value", "").text("All");
+      options.sort().forEach(opt => {
+        select.append("option").attr("value", opt).text(opt);
+      });
+    }
+
+    function applyFilters() {
+      const company = d3.select("#companyFilter").property("value");
+      const title = d3.select("#titleFilter").property("value");
+      const level = d3.select("#levelFilter").property("value");
+
+      filteredData = rawData.filter(d =>
+        (!company || d.Company === company) &&
+        (!title || d["Job Title"] === title) &&
+        (!level || d["Job Level"] === level)
+      );
+
+      d3.select("#totalCount").text(filteredData.length);
+      drawBarChart();
+    }
+
+    function drawBarChart() {
+      const stageCounts = d3.rollup(
+        filteredData,
+        v => v.length,
+        d => d["Interview Stage"]
+      );
+
+      const svg = d3.select("#chart");
+      svg.selectAll("*").remove();
+
+      const width = +svg.attr("width") || 400;
+      const height = +svg.attr("height") || 400;
+      const margin = { top: 20, right: 20, bottom: 40, left: 150 };
+
+      const x = d3.scaleLinear()
+        .domain([0, d3.max(stageOrder, s => stageCounts.get(s) || 0)])
+        .range([margin.left, width - margin.right]);
+
+      const y = d3.scaleBand()
+        .domain(stageOrder)
+        .range([margin.top, height - margin.bottom])
+        .padding(0.2);
+
+      svg.selectAll(".bar")
+        .data(stageOrder)
+        .join("rect")
+        .attr("class", "bar")
+        .attr("x", margin.left)
+        .attr("y", d => y(d))
+        .attr("width", d => x(stageCounts.get(d) || 0) - margin.left)
+        .attr("height", y.bandwidth())
+        .on("click", (event, d) => showBreakdown(d));
+
+      svg.selectAll(".label")
+        .data(stageOrder)
+        .join("text")
+        .attr("x", d => x(stageCounts.get(d) || 0) + 5)
+        .attr("y", d => y(d) + y.bandwidth() / 2)
+        .attr("alignment-baseline", "middle")
+        .text(d => stageCounts.get(d) || 0);
+
+      svg.selectAll(".y-axis-label")
+        .data(stageOrder)
+        .join("text")
+        .attr("x", margin.left - 10)
+        .attr("y", d => y(d) + y.bandwidth() / 2)
+        .attr("text-anchor", "end")
+        .attr("alignment-baseline", "middle")
+        .text(d => d);
+    }
+
+    function showBreakdown(stage) {
+      const subset = filteredData.filter(d => d["Interview Stage"] === stage);
+      const count = subset.length;
+
+      const degreeCounts = d3.rollup(subset, v => v.length, d => d["Highest Degree"]);
+      const visaCounts = d3.rollup(subset, v => v.length, d => d["Visa Sponsorship"]);
+      const referralCounts = d3.rollup(subset, v => v.length, d => d["Referral"]);
+
+      const experienceBuckets = {
+        "<2 Years": 0,
+        "2-4 Years": 0,
+        "4-6 Years": 0,
+        ">6 Years": 0
+      };
+
+      subset.forEach(d => {
+        const exp = +d["Years of Experience"];
+        if (exp < 2) experienceBuckets["<2 Years"]++;
+        else if (exp < 4) experienceBuckets["2-4 Years"]++;
+        else if (exp < 6) experienceBuckets["4-6 Years"]++;
+        else experienceBuckets[">6 Years"]++;
+      });
+
+      const breakdown = d3.select("#breakdown");
+      breakdown.html(`<h4>${stage}</h4>`);
+
+      const formatBreakdown = (label, mapOrObj) => {
+      breakdown.append("p").html(`<strong>${label}</strong>`);
+
+      const entries = mapOrObj instanceof Map
+        ? Array.from(mapOrObj.entries())
+        : Array.isArray(mapOrObj)
+        ? mapOrObj
+        : Object.entries(mapOrObj);
+
+      breakdown.append("ul")
+        .selectAll("li")
+        .data(entries)
+        .join("li")
+        .text(([key, val]) => `${key}: ${(val / count * 100).toFixed(1)}%`);
+      };
+
+      formatBreakdown("Highest Degree", degreeCounts);
+      formatBreakdown("Visa Sponsorship", visaCounts);
+      formatBreakdown("Years of Experience", Object.entries(experienceBuckets));
+      formatBreakdown("Referral", referralCounts);
+    }
+  </script>
+</body>
+</html>
