@@ -18,13 +18,24 @@
 <body>
   <div id="filters">
     <h3>Filters</h3>
+    <label for="companyFilter"><strong>Company</strong></label>
     <select id="companyFilter"></select>
+
+    <label for="titleFilter"><strong>Job Title</strong></label>
     <select id="titleFilter"></select>
+
+    <label for="levelFilter"><strong>Job Level</strong></label>
     <select id="levelFilter"></select>
-    <p><strong>Total Applications:</strong> <span id="totalCount"></span></p>
+    <p style="font-size: 2em;">
+    <strong>Total Applications:</strong>
+    <span id="totalCount" style="font-size: 2em;"></span>
+  </p>
   </div>
 
+  <div style="width: 50%;">
+  <h2>Interview Stage Breakdown</h2>
   <svg id="chart" height="400"></svg>
+  </div>
 
   <div id="details">
     <h3>Stage Breakdown</h3>
