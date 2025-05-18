@@ -213,7 +213,7 @@
         options: {
           responsive: true,
           indexAxis: "x",
-          aspectRatio: 2.0,
+          aspectRatio: 1.8,
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -227,7 +227,7 @@
 
       // Click handler
       const canvas = document.getElementById("funnelChart");
-      canvas.height = 200;
+      canvas.height = 50;
       canvas.onclick = (evt) => {
         const points = window.myFunnelChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
         if (points.length) {
