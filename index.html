@@ -20,10 +20,33 @@
     }
     #chartContainer {
       width: 50%;
+      position: relative;
     }
-    canvas {
+    #funnelChart {
       width: 100%;
       height: 300px;
+    }
+    #stageOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      font-weight: bold;
+      font-size: 0.85em;
+    }
+    #stageOverlay div {
+      flex: 1;
+      text-align: center;
+    }
+    #stageOverlay .divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #ccc;
     }
     select {
       width: 100%;
@@ -56,7 +79,10 @@
 
   <div id="chartContainer">
     <h2>Interview Stage Breakdown</h2>
-    <canvas id="funnelChart"></canvas>
+    <div id="funnelWrapper" style="position: relative;">
+      <canvas id="funnelChart"></canvas>
+      <div id="stageOverlay"></div>
+    </div>
   </div>
 
   <div id="details">
@@ -167,6 +193,24 @@
           showBreakdown(stageLabel);
         }
       };
+
+      // Overlay labels & vertical lines
+      const overlay = document.getElementById("stageOverlay");
+      overlay.innerHTML = "";
+      labels.forEach((label, i) => {
+        const count = values[i];
+
+        const labelDiv = document.createElement("div");
+        labelDiv.innerHTML = `${count}<br><span style="font-size: 0.8em;">${label}</span>`;
+        overlay.appendChild(labelDiv);
+
+        if (i > 0) {
+          const divider = document.createElement("div");
+          divider.className = "divider";
+          divider.style.left = `${(i / labels.length) * 100}%`;
+          overlay.appendChild(divider);
+        }
+      });
     }
 
     function showBreakdown(stage) {
