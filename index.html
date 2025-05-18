@@ -2,200 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interview Process Dashboard</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <title>Interview Funnel Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-funnel"></script>
   <style>
-    body { font-family: sans-serif; display: flex; flex-direction: row; margin: 20px; }
-    #filters, #details { width: 25%; margin-right: 20px; }
-    #chart { width: 50%; }
-    select { width: 100%; padding: 5px; margin-bottom: 10px; }
-    .bar { fill: steelblue; cursor: pointer; }
-    .bar:hover { fill: darkorange; }
-    .highlighted { font-weight: bold; color: darkgreen; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+    canvas {
+      max-width: 600px;
+      margin: auto;
+    }
   </style>
 </head>
 <body>
-  <div id="filters">
-    <h3>Filters</h3>
-    <label for="companyFilter"><strong>Company</strong></label>
-    <select id="companyFilter"></select>
-
-    <label for="titleFilter"><strong>Job Title</strong></label>
-    <select id="titleFilter"></select>
-
-    <label for="levelFilter"><strong>Job Level</strong></label>
-    <select id="levelFilter"></select>
-    <p style="font-size: 2em;">
-    <strong>Total Applications:</strong>
-    <span id="totalCount" style="font-size: 2em;"></span>
-  </p>
-  </div>
-
-  <div style="width: 50%;">
-  <h2>Interview Stage Breakdown</h2>
-  <svg id="chart" height="400"></svg>
-  </div>
-
-  <div id="details">
-    <h3>Stage Breakdown</h3>
-    <div id="breakdown"></div>
-  </div>
+  <h2>Interview Progress Funnel</h2>
+  <canvas id="funnelChart" width="600" height="400"></canvas>
 
   <script>
-    const stageOrder = [
-      "No Reply", "Rejection Email" ,"Recruiter Screen", "Technical Screen",
-      "HM Screen", "Onsite Interview", "Final Round"
-    ];
+    const ctx = document.getElementById('funnelChart').getContext('2d');
 
-    let rawData, filteredData;
-
-    // Load sample CSV data
-    d3.csv("interview_data.csv").then(data => {
-      rawData = data;
-      populateFilters();
-      applyFilters();
+    new Chart(ctx, {
+      type: 'funnel',
+      data: {
+        labels: [
+          'Total Applications',
+          'Interview Scheduled',
+          'Interview Attended',
+          'Offer Received',
+          'Offer Accepted',
+          'Joined',
+          'Not Joined'
+        ],
+        datasets: [{
+          label: 'Candidates',
+          data: [30000, 15000, 12000, 3500, 2000, 1800, 200],
+          backgroundColor: [
+            '#4f46e5', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#dbeafe', '#f0f9ff'
+          ]
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            label: ctx => `${ctx.label}: ${ctx.raw}`
+          }}
+        },
+        maintainAspectRatio: false
+      }
     });
-
-    function populateFilters() {
-      const companies = Array.from(new Set(rawData.map(d => d.Company)));
-      const titles = Array.from(new Set(rawData.map(d => d["Job Title"])));
-      const levels = Array.from(new Set(rawData.map(d => d["Job Level"])));
-
-      populateSelect("companyFilter", companies);
-      populateSelect("titleFilter", titles);
-      populateSelect("levelFilter", levels);
-
-      d3.selectAll("select").on("change", applyFilters);
-    }
-
-    function populateSelect(id, options) {
-      const select = d3.select(`#${id}`);
-      select.append("option").attr("value", "").text("All");
-      options.sort().forEach(opt => {
-        select.append("option").attr("value", opt).text(opt);
-      });
-    }
-
-    function applyFilters() {
-      const company = d3.select("#companyFilter").property("value");
-      const title = d3.select("#titleFilter").property("value");
-      const level = d3.select("#levelFilter").property("value");
-
-      filteredData = rawData.filter(d =>
-        (!company || d.Company === company) &&
-        (!title || d["Job Title"] === title) &&
-        (!level || d["Job Level"] === level)
-      );
-
-      d3.select("#totalCount").text(filteredData.length);
-      drawBarChart();
-    }
-
-    function drawBarChart() {
-      const stageCounts = d3.rollup(
-        filteredData,
-        v => v.length,
-        d => d["Interview Stage"]
-      );
-
-      const svg = d3.select("#chart");
-      svg.selectAll("*").remove();
-
-      const width = +svg.attr("width") || 400;
-      const height = +svg.attr("height") || 400;
-      const margin = { top: 20, right: 20, bottom: 40, left: 150 };
-
-      const x = d3.scaleLinear()
-        .domain([0, d3.max(stageOrder, s => stageCounts.get(s) || 0)])
-        .range([margin.left, width - margin.right]);
-
-      const y = d3.scaleBand()
-        .domain(stageOrder)
-        .range([margin.top, height - margin.bottom])
-        .padding(0.2);
-
-      svg.selectAll(".bar")
-        .data(stageOrder)
-        .join("rect")
-        .attr("class", "bar")
-        .attr("x", margin.left)
-        .attr("y", d => y(d))
-        .attr("width", d => x(stageCounts.get(d) || 0) - margin.left)
-        .attr("height", y.bandwidth())
-        .on("click", (event, d) => showBreakdown(d));
-
-      svg.selectAll(".label")
-        .data(stageOrder)
-        .join("text")
-        .attr("x", d => x(stageCounts.get(d) || 0) + 5)
-        .attr("y", d => y(d) + y.bandwidth() / 2)
-        .attr("alignment-baseline", "middle")
-        .text(d => stageCounts.get(d) || 0);
-
-      svg.selectAll(".y-axis-label")
-        .data(stageOrder)
-        .join("text")
-        .attr("x", margin.left - 10)
-        .attr("y", d => y(d) + y.bandwidth() / 2)
-        .attr("text-anchor", "end")
-        .attr("alignment-baseline", "middle")
-        .text(d => d);
-    }
-
-    function showBreakdown(stage) {
-      const subset = filteredData.filter(d => d["Interview Stage"] === stage);
-      const count = subset.length;
-
-      const degreeCounts = d3.rollup(subset, v => v.length, d => d["Highest Degree"]);
-      const visaCounts = d3.rollup(subset, v => v.length, d => d["Visa Sponsorship"]);
-      const referralCounts = d3.rollup(subset, v => v.length, d => d["Referral"]);
-      const programCounts = d3.rollup(subset, v => v.length, d => d["Came Through Program Channel"]);
-      const inviteCounts = d3.rollup(subset, v => v.length, d => d["Invited to Interview by Recruiter or HM"]);
-      const coverLetterCounts = d3.rollup(subset, v => v.length, d => d["Submitted Cover Letter"]);
-
-      const experienceBuckets = {
-        "<2 Years": 0,
-        "2-4 Years": 0,
-        "4-6 Years": 0,
-        ">6 Years": 0
-      };
-
-      subset.forEach(d => {
-        const exp = +d["Years of Experience"];
-        if (exp < 2) experienceBuckets["<2 Years"]++;
-        else if (exp < 4) experienceBuckets["2-4 Years"]++;
-        else if (exp < 6) experienceBuckets["4-6 Years"]++;
-        else experienceBuckets[">6 Years"]++;
-      });
-
-      const breakdown = d3.select("#breakdown");
-      breakdown.html(`<h4>${stage}</h4>`);
-
-      const formatBreakdown = (label, mapOrObj) => {
-        breakdown.append("p").html(`<strong>${label}</strong>`);
-        const entries = mapOrObj instanceof Map
-          ? Array.from(mapOrObj.entries())
-          : Array.isArray(mapOrObj)
-          ? mapOrObj
-          : Object.entries(mapOrObj);
-
-        breakdown.append("ul")
-          .selectAll("li")
-          .data(entries)
-          .join("li")
-          .text(([key, val]) => `${key}: ${(val / count * 100).toFixed(1)}%`);
-      };
-
-      formatBreakdown("Highest Degree", degreeCounts);
-      formatBreakdown("Visa Sponsorship", visaCounts);
-      formatBreakdown("Years of Experience", Object.entries(experienceBuckets));
-      formatBreakdown("Referral", referralCounts);
-      formatBreakdown("Came Through Program Channel", programCounts);
-      formatBreakdown("Invited to Interview by Recruiter or HM", inviteCounts);
-      formatBreakdown("Submitted Cover Letter", coverLetterCounts);
-    }
-
   </script>
 </body>
 </html>
