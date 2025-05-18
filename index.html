@@ -156,6 +156,17 @@
           }
         }
       });
+
+      // Enable click interaction
+      const canvas = document.getElementById("funnelChart");
+      canvas.onclick = (evt) => {
+        const points = window.myFunnelChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+        if (points.length) {
+          const index = points[0].index;
+          const stageLabel = stageOrder[index];
+          showBreakdown(stageLabel);
+        }
+      };
     }
 
     function showBreakdown(stage) {
