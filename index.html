@@ -75,4 +75,141 @@
     d3.csv("interview_data.csv").then(data => {
       rawData = data;
       populateFilters();
-      appl
+      applyFilters();
+    });
+
+    function populateFilters() {
+      const companies = Array.from(new Set(rawData.map(d => d.Company)));
+      const titles = Array.from(new Set(rawData.map(d => d["Job Title"])));
+      const levels = Array.from(new Set(rawData.map(d => d["Job Level"])));
+
+      populateSelect("companyFilter", companies);
+      populateSelect("titleFilter", titles);
+      populateSelect("levelFilter", levels);
+
+      d3.selectAll("select").on("change", applyFilters);
+    }
+
+    function populateSelect(id, options) {
+      const select = d3.select(`#${id}`);
+      select.append("option").attr("value", "").text("All");
+      options.sort().forEach(opt => {
+        select.append("option").attr("value", opt).text(opt);
+      });
+    }
+
+    function applyFilters() {
+      const company = d3.select("#companyFilter").property("value");
+      const title = d3.select("#titleFilter").property("value");
+      const level = d3.select("#levelFilter").property("value");
+
+      filteredData = rawData.filter(d =>
+        (!company || d.Company === company) &&
+        (!title || d["Job Title"] === title) &&
+        (!level || d["Job Level"] === level)
+      );
+
+      d3.select("#totalCount").text(filteredData.length);
+      drawBarChart();
+    }
+
+    function drawBarChart() {
+      const stageCounts = d3.rollup(
+        filteredData,
+        v => v.length,
+        d => d["Interview Stage"]
+      );
+
+      const labels = stageOrder;
+      const values = labels.map(stage => stageCounts.get(stage) || 0);
+
+      if (window.myFunnelChart) {
+        window.myFunnelChart.destroy();
+      }
+
+      const ctx = document.getElementById("funnelChart").getContext("2d");
+
+      window.myFunnelChart = new Chart(ctx, {
+        type: "funnel",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Candidates",
+            data: values,
+            backgroundColor: [
+              '#4f46e5', '#6366f1', '#818cf8', '#a5b4fc',
+              '#c7d2fe', '#dbeafe', '#f0f9ff'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          indexAxis: "x",
+          aspectRatio: 2.5,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.label}: ${ctx.raw}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function showBreakdown(stage) {
+      const subset = filteredData.filter(d => d["Interview Stage"] === stage);
+      const count = subset.length;
+
+      const degreeCounts = d3.rollup(subset, v => v.length, d => d["Highest Degree"]);
+      const visaCounts = d3.rollup(subset, v => v.length, d => d["Visa Sponsorship"]);
+      const referralCounts = d3.rollup(subset, v => v.length, d => d["Referral"]);
+      const programCounts = d3.rollup(subset, v => v.length, d => d["Came Through Program Channel"]);
+      const inviteCounts = d3.rollup(subset, v => v.length, d => d["Invited to Interview by Recruiter or HM"]);
+      const coverLetterCounts = d3.rollup(subset, v => v.length, d => d["Submitted Cover Letter"]);
+
+      const experienceBuckets = {
+        "<2 Years": 0,
+        "2-4 Years": 0,
+        "4-6 Years": 0,
+        ">6 Years": 0
+      };
+
+      subset.forEach(d => {
+        const exp = +d["Years of Experience"];
+        if (exp < 2) experienceBuckets["<2 Years"]++;
+        else if (exp < 4) experienceBuckets["2-4 Years"]++;
+        else if (exp < 6) experienceBuckets["4-6 Years"]++;
+        else experienceBuckets[">6 Years"]++;
+      });
+
+      const breakdown = d3.select("#breakdown");
+      breakdown.html(`<h4>${stage}</h4>`);
+
+      const formatBreakdown = (label, mapOrObj) => {
+        breakdown.append("p").html(`<strong>${label}</strong>`);
+        const entries = mapOrObj instanceof Map
+          ? Array.from(mapOrObj.entries())
+          : Array.isArray(mapOrObj)
+          ? mapOrObj
+          : Object.entries(mapOrObj);
+
+        breakdown.append("ul")
+          .selectAll("li")
+          .data(entries)
+          .join("li")
+          .text(([key, val]) => `${key}: ${(val / count * 100).toFixed(1)}%`);
+      };
+
+      formatBreakdown("Highest Degree", degreeCounts);
+      formatBreakdown("Visa Sponsorship", visaCounts);
+      formatBreakdown("Years of Experience", Object.entries(experienceBuckets));
+      formatBreakdown("Referral", referralCounts);
+      formatBreakdown("Came Through Program Channel", programCounts);
+      formatBreakdown("Invited to Interview by Recruiter or HM", inviteCounts);
+      formatBreakdown("Submitted Cover Letter", coverLetterCounts);
+    }
+  </script>
+</body>
+</html>
