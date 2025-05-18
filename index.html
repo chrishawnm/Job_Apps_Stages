@@ -2,65 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Horizontal Interview Funnel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Process Dashboard</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-funnel"></script>
   <style>
     body {
       font-family: sans-serif;
-      text-align: center;
-      margin: 40px;
+      display: flex;
+      flex-direction: row;
+      margin: 20px;
+    }
+    #filters, #details {
+      width: 25%;
+      margin-right: 20px;
+    }
+    #chartContainer {
+      width: 50%;
     }
     canvas {
       width: 100%;
-      max-width: 800px;
       height: 300px;
-      margin: auto;
-      display: block;
+    }
+    select {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+    .highlighted {
+      font-weight: bold;
+      color: darkgreen;
     }
   </style>
 </head>
 <body>
-  <h2>Interview Progress Funnel (Horizontal)</h2>
-  <canvas id="funnelChart"></canvas>
+  <div id="filters">
+    <h3>Filters</h3>
+    <label for="companyFilter"><strong>Company</strong></label>
+    <select id="companyFilter"></select>
+
+    <label for="titleFilter"><strong>Job Title</strong></label>
+    <select id="titleFilter"></select>
+
+    <label for="levelFilter"><strong>Job Level</strong></label>
+    <select id="levelFilter"></select>
+
+    <p style="font-size: 2em;">
+      <strong>Total Applications:</strong>
+      <span id="totalCount" style="font-size: 2em;"></span>
+    </p>
+  </div>
+
+  <div id="chartContainer">
+    <h2>Interview Stage Breakdown</h2>
+    <canvas id="funnelChart"></canvas>
+  </div>
+
+  <div id="details">
+    <h3>Stage Breakdown</h3>
+    <div id="breakdown"></div>
+  </div>
 
   <script>
-    const ctx = document.getElementById('funnelChart').getContext('2d');
+    const stageOrder = [
+      "No Reply", "Rejection Email", "Recruiter Screen", "Technical Screen",
+      "HM Screen", "Onsite Interview", "Final Round"
+    ];
 
-    new Chart(ctx, {
-      type: 'funnel',
-      data: {
-        labels: [
-          'Total Applications',
-          'Interview Scheduled',
-          'Interview Attended',
-          'Offer Received',
-          'Offer Accepted',
-          'Joined',
-          'Not Joined'
-        ],
-        datasets: [{
-          label: 'Candidates',
-          data: [30000, 15000, 12000, 3500, 2000, 1800, 200],
-          backgroundColor: [
-            '#4f46e5', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#dbeafe', '#f0f9ff'
-          ]
-        }]
-      },
-      options: {
-        responsive: true,
-        indexAxis: 'x', // ← HORIZONTAL
-        aspectRatio: 2.5,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.label}: ${ctx.raw}`
-            }
-          }
-        }
-      }
-    });
-  </script>
-</body>
-</html>
+    let rawData, filteredData;
+
+    d3.csv("interview_data.csv").then(data => {
+      rawData = data;
+      populateFilters();
+      appl
