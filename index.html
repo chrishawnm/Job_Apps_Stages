@@ -227,7 +227,7 @@
 
       // Click handler
       const canvas = document.getElementById("funnelChart");
-      canvas.height = 50;
+      canvas.height = 200;
       canvas.onclick = (evt) => {
         const points = window.myFunnelChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
         if (points.length) {
