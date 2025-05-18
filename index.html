@@ -50,6 +50,10 @@
       max-width: 100%;
     }
 
+    .section-title {
+      margin-bottom: 20px;
+    }
+
     #stageOverlay {
       position: absolute;
       top: 0;
@@ -125,7 +129,7 @@
   </div>
 
   <div id="chartContainer">
-    <h2>Interview Stage Breakdown</h2>
+    <h2 class="section-title">Interview Stage Breakdown</h2>
     <div id="funnelWrapper" style="position: relative;">
       <canvas id="funnelChart"></canvas>
       <div id="stageOverlay"></div>
@@ -309,4 +313,11 @@
       formatBreakdown("Highest Degree", degreeCounts);
       formatBreakdown("Visa Sponsorship", visaCounts);
       formatBreakdown("Years of Experience", Object.entries(experienceBuckets));
-      formatBreakdow
+      formatBreakdown("Referral", referralCounts);
+      formatBreakdown("Came Through Program Channel", programCounts);
+      formatBreakdown("Invited to Interview by Recruiter or HM", inviteCounts);
+      formatBreakdown("Submitted Cover Letter", coverLetterCounts);
+    }
+  </script>
+</body>
+</html>
