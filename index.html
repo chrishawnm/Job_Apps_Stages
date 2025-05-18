@@ -2,24 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Interview Funnel Chart</title>
+  <title>Horizontal Interview Funnel</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-funnel"></script>
   <style>
     body {
       font-family: sans-serif;
       text-align: center;
-      margin-top: 40px;
+      margin: 40px;
     }
     canvas {
-      max-width: 600px;
+      width: 100%;
+      max-width: 800px;
+      height: 300px;
       margin: auto;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h2>Interview Progress Funnel</h2>
-  <canvas id="funnelChart" width="600" height="400"></canvas>
+  <h2>Interview Progress Funnel (Horizontal)</h2>
+  <canvas id="funnelChart"></canvas>
 
   <script>
     const ctx = document.getElementById('funnelChart').getContext('2d');
@@ -45,14 +48,17 @@
         }]
       },
       options: {
-        indexAxis: 'y',
+        responsive: true,
+        indexAxis: 'x', // ← HORIZONTAL
+        aspectRatio: 2.5,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: {
-            label: ctx => `${ctx.label}: ${ctx.raw}`
-          }}
-        },
-        maintainAspectRatio: false
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.label}: ${ctx.raw}`
+            }
+          }
+        }
       }
     });
   </script>
