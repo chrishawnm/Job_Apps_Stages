@@ -45,7 +45,6 @@
 
     #funnelChart {
       width: 100%;
-      height: 100px;
     }
 
     #stageOverlay {
@@ -228,6 +227,7 @@
 
       // Click handler
       const canvas = document.getElementById("funnelChart");
+      canvas.height = 200;
       canvas.onclick = (evt) => {
         const points = window.myFunnelChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
         if (points.length) {
