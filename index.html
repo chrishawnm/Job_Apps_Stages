@@ -46,6 +46,8 @@
     #funnelChart {
       display: block;
       margin: 0 auto;
+      width: 100vw;
+      max-width: 100%;
     }
 
     #stageOverlay {
@@ -75,19 +77,21 @@
 
     #details {
       display: flex;
-      flex-wrap: wrap;
-      gap: 40px;
-    }
-
-    #details h3 {
-      flex-basis: 100%;
-      margin: 0 0 10px 0;
+      flex-direction: column;
+      gap: 10px;
     }
 
     #breakdown {
       display: flex;
-      flex-wrap: wrap;
-      gap: 40px;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      overflow-x: auto;
+      font-size: 0.8em;
+      gap: 20px;
+    }
+
+    #breakdown > div {
+      min-width: 120px;
     }
 
     #breakdown ul {
@@ -198,7 +202,8 @@
 
       const canvas = document.getElementById("funnelChart");
       canvas.height = 200;
-      canvas.width = 900;
+      canvas.width = window.innerWidth;
+
       const ctx = canvas.getContext("2d");
 
       window.myFunnelChart = new Chart(ctx, {
@@ -304,11 +309,4 @@
       formatBreakdown("Highest Degree", degreeCounts);
       formatBreakdown("Visa Sponsorship", visaCounts);
       formatBreakdown("Years of Experience", Object.entries(experienceBuckets));
-      formatBreakdown("Referral", referralCounts);
-      formatBreakdown("Came Through Program Channel", programCounts);
-      formatBreakdown("Invited to Interview by Recruiter or HM", inviteCounts);
-      formatBreakdown("Submitted Cover Letter", coverLetterCounts);
-    }
-  </script>
-</body>
-</html>
+      formatBreakdow
