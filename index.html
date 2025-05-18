@@ -44,7 +44,8 @@
     }
 
     #funnelChart {
-      width: 100%;
+      display: block;
+      margin: 0 auto;
     }
 
     #stageOverlay {
@@ -195,7 +196,10 @@
         window.myFunnelChart.destroy();
       }
 
-      const ctx = document.getElementById("funnelChart").getContext("2d");
+      const canvas = document.getElementById("funnelChart");
+      canvas.height = 200;
+      canvas.width = 900;
+      const ctx = canvas.getContext("2d");
 
       window.myFunnelChart = new Chart(ctx, {
         type: "funnel",
@@ -211,9 +215,9 @@
           }]
         },
         options: {
-          responsive: true,
+          responsive: false,
+          maintainAspectRatio: false,
           indexAxis: "x",
-          aspectRatio: 1.8,
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -225,9 +229,6 @@
         }
       });
 
-      // Click handler
-      const canvas = document.getElementById("funnelChart");
-      canvas.height = 200;
       canvas.onclick = (evt) => {
         const points = window.myFunnelChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
         if (points.length) {
@@ -237,12 +238,10 @@
         }
       };
 
-      // Overlay labels & dividers
       const overlay = document.getElementById("stageOverlay");
       overlay.innerHTML = "";
       labels.forEach((label, i) => {
         const count = values[i];
-
         const labelDiv = document.createElement("div");
         labelDiv.innerHTML = `${count}<br><span style="font-size: 0.8em;">${label}</span>`;
         overlay.appendChild(labelDiv);
